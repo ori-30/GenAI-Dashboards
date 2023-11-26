@@ -1,5 +1,4 @@
-import streamlist as st
-import pandas as pd
+import streamlit as st
 
 st.write("""
 #My first app
