@@ -9,7 +9,6 @@ st.set_page_config(
     page_icon=":heart:"
 )
 
-
 with st.sidebar:
 
 	st.header("Chatbot")
