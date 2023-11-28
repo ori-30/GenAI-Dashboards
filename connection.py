@@ -26,33 +26,30 @@ if "messages" not in st.session_state:
 
 #creamos la sidebar
 with st.sidebar:
-	try:
-		st.header("Chatbot", divider='rainbow')
-		prompt = get_text()
-		#mostramos el chat de mensajes desde el historial
-		for message in st.session_state.messages:
-		    with st.chat_message(message["role"]):
-		        st.markdown(message["content"])
+	st.header("Chatbot", divider='rainbow')
+	prompt = get_text()
+	#mostramos el chat de mensajes desde el historial
+	for message in st.session_state.messages:
+	    with st.chat_message(message["role"]):
+	        st.markdown(message["content"])
 
-		# Accept user input
-		if prompt:
-		    # Add user message to chat history
-		    st.session_state.messages.append({"role": "user", "content": prompt})
-		    # Display user message in chat message container
-		    with st.chat_message("user"):
-		        st.markdown(prompt)
-		    # Display assistant response in chat message container
-		    with st.chat_message("assistant"):
-		        message_placeholder = st.empty()
-		        full_response = ""
-		cl=client.chat.completions.create(model=st.session_state["openai_model"], messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages], stream=True)
-		for response in cl:
-			full_response +=(response.choices[0].delta.content or "")
-			message_placeholder.markdown(full_response + "▌")
-		message_placeholder.markdown(full_response)
-		st.session_state.messages.append({"role": "assistant", "content": full_response})
-	except:
-		""        
+	# Accept user input
+	if prompt:
+	    # Add user message to chat history
+	    st.session_state.messages.append({"role": "user", "content": prompt})
+	    # Display user message in chat message container
+	    with st.chat_message("user"):
+	        st.markdown(prompt)
+	    # Display assistant response in chat message container
+	    with st.chat_message("assistant"):
+	        message_placeholder = st.empty()
+	        full_response = ""
+	cl=client.chat.completions.create(model=st.session_state["openai_model"], messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages], stream=True)
+	for response in cl:
+		full_response +=(response.choices[0].delta.content or "")
+		message_placeholder.markdown(full_response + "▌")
+	message_placeholder.markdown(full_response)
+	st.session_state.messages.append({"role": "assistant", "content": full_response})      
 
 
 container= st.container()
