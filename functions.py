@@ -6,10 +6,18 @@ import json
 import openai
 from typing import List
 
-
 def get_text():
 
     input_text = st.text_input("You: ","", key="input")
+    return input_text
+
+def get_area():
+
+    input_text = st.text_input("Area de negocio (ej: sector tecnológico): ","", key="area")
+    return input_text
+
+def get_des():
+    input_text = st.text_input("Descripción empresa (ej: sector startup): ","", key="des")
     return input_text 
 
 def create_gpt_completion(ai_model: str, messages: List[dict]) -> dict:
@@ -22,7 +30,7 @@ def create_gpt_completion(ai_model: str, messages: List[dict]) -> dict:
 
 
 def get_JSON():
-	dominios ='{"Dominios": [{ "titulo": "Dominio 1", "tablas": ["tabla1","tabla2"] }, { "titulo": "Dominio 2", "tablas": ["tabla3","tabla4"] }, { "titulo": "Dominio 3", "tablas": ["tabla1","tabla2"] }, { "titulo": "Dominio 4", "tablas": ["tabla1","tabla2"] }]}'
+	dominios ='{ "dominios": [ { "nombre": "ciudades", "tablas": [ "CIUDADES" ] }, { "nombre": "exits", "tablas": [ "EXITS" ] }, { "nombre": "inversores", "tablas": [ "INVERSORES" ] }, { "nombre": "rondas", "tablas": [ "RONDAS" ] }, { "nombre": "startups", "tablas": [ "STARTUPS" ] }, { "nombre": "tags", "tablas": [ "TAGS" ] } ] }'
 	return json.loads(dominios)
 
 def tables(alltables):
@@ -36,7 +44,7 @@ def create_card(title, alltables):
 		<div class="m-1 p-1"style="padding: 2px 16px;">
 			<div class="card m-2" style="width: 18rem;">
 			  <div class="card-body bg-light">
-			    <h3 class="card-title">Dominio:%s</h3>
+			    <h3 class="card-title">%s</h3>
 	""" % str(title)
 	card+=tables(alltables)
 
@@ -51,7 +59,7 @@ def create_domains(dominios, container):
 	c = container.columns(2)
 	i=0
 	for dominio in dominios:
-		d= create_card(dominio["titulo"], dominio["tablas"])
+		d= create_card(dominio["nombre"], dominio["tablas"])
 		c[i].markdown(d, unsafe_allow_html= True)
 		i=(i+1)%2
 
