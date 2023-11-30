@@ -20,17 +20,25 @@ def snowpark_basic_auth() -> Session:
         "PASSWORD": password
     }
     return Session.builder.configs(connection_parameters).create()
-def snowpark_basic_auth_toml() -> Session:
-    account = st.secrets["account"]
-    user = st.secrets["user"]
-    password = st.secrets["password"]
+#snowflake conn for streamlit
+def snowpark_auth(account,user,password) -> Session:
     connection_parameters = {
         "ACCOUNT": account,
         "USER": user,
         "PASSWORD": password
     }
     return Session.builder.configs(connection_parameters).create()
-def execute_query_and_fetch_dataframe(session):
+def snowpark_basic_auth_toml() -> Session:
+    account = st.secrets["SNOWFLAKE_ACCOUNT"]
+    user = st.secrets["SNOWFLAKE_USER"]
+    password = st.secrets["SNOWFLAKE_PASSWORD"]
+    connection_parameters = {
+        "ACCOUNT": account,
+        "USER": user,
+        "PASSWORD": password
+    }
+    return Session.builder.configs(connection_parameters).create()
+def execute_query_and_fetch_dataframe(session,db):
     session.sql("use role accountadmin").collect()
     query = """
     SELECT DISTINCT
@@ -40,16 +48,16 @@ def execute_query_and_fetch_dataframe(session):
         COLUMNS.COMMENT AS COLUMN_DESC,
         COLUMNS.DATA_TYPE
     FROM 
-        DOMAINTEST.INFORMATION_SCHEMA.COLUMNS AS COLUMNS
+        {}.INFORMATION_SCHEMA.COLUMNS AS COLUMNS
     JOIN
-        DOMAINTEST.INFORMATION_SCHEMA.TABLES AS TABLES
+        {}.INFORMATION_SCHEMA.TABLES AS TABLES
     ON
         COLUMNS.TABLE_NAME = TABLES.TABLE_NAME
         AND TABLES.TABLE_SCHEMA != 'INFORMATION_SCHEMA'
     ORDER BY
         TABLES.TABLE_NAME, COLUMNS.COLUMN_NAME;
     """
-
+    query=query.format(db,db)
     result = session.sql(query).collect()
 
     result_json = {}
@@ -108,15 +116,15 @@ def save_fragments_to_json(fragments, output_prefix="parte"):
             json.dump(fragment, file, ensure_ascii=False, indent=2)
         print(f"Fragment {idx + 1} saved to {output_file}")
 
-def get_metadata():
-    conn=snowpark_basic_auth_toml()
+def get_metadata(account,user,password,db):
+    conn=snowpark_auth(account,user,password)
     GEN_SQL = """
 Vas a actuar como un experto data architect de Snowflake llamado Yorkis.
 Tu objetivo es aplicar inteligencia al proceso de segmentación por dominios en la capa Golden.
 
 La respuesta esperada es un listado con los dominios recomendados por la IA, así como un listado de las tablas que deberían pertenecer a esos dominios.
 
-Para ello debes ayudarte de una descripción de la empresa, sus áreas de negocio y un JSON con los metadatos de las tablas.
+Para ello debes ayudarte de una descripción de la empresa, sus áreas de negocio y los metadatos de las tablas.
 Estos metadatos incluyen el nombre de la tabla, su descripción, el nombre de las columnas, su tipo y su descripción. Los metadataos tienen este formato:
 
 Table: table1
@@ -133,22 +141,23 @@ CREATE SCHEMA IF NOT EXISTS <database>.<domain_name>;
 CREATE TABLE IF NOT EXISTS <database>.<domain_name>.<table_name> AS SELECT * FROM <table_name>;
 
 Te dejo un serie de normas que debes cumplir para poder hacer el ejercicio:
-1. Si no te han proporcionado una descripción de la empresa, no hagas nada y pidele al usuario. Es primordial.
-2. Si no te han proporcionado las áreas de negocio, no hagas nada y pidele al usuario. Es primordial.
-3. Si no te han proporcionado  los metadatos de las tablas, no hagas nada y pidele al usuario que lo suba.
-5. Solo y solo cuando hayas recibido todos los componenetes (descripcion, areas y metadatos), puedes empezar a procesarlos.
-6. Cuando hayas procesado todos los componenetes, debes generar los dominios y las tablas y añadir una explicación de por qué has elegido esos dominios y tablas.
+1. Necesitas 3 componentes para generar los dominios. La description, las areas y los metadatos)
+2. Debes revisar que tienes todos antes de preguntar.
+3. Si te falta un componente despues de revisarlo pidelo.
+5. Cuando hayas procesado todos los componenetes, debes generar los dominios y las tablas y añadir una explicación de por qué has elegido esos dominios y tablas.
+6. Es primordial que una tabla no puede estar en varios dominios.
 
 Para recapitular te indico los pasos que debes seguir siempre de manera inequivoca:
-1. Da una bienvenida
-2. Pidele al usuario la descripcion y las áreas de negocio.
-3. Procesa la descripción de la empresa y las áreas de negocio y los metadatos de las tablas para generar los dominios y las tablas.
+1. Da una bienvenida y explica lo que haces
+2. Revisa que tienes los 3 componentes. Si no es asi, pidelos.
+3. Procesa la descripción de la empresa y las áreas de negocio y los metadatos de las tablas para generar los dominios y las tablas. Recuerda que una tabla no puede estar en varios dominios.
+4. Pide confirmacion antes de generar las queries
 
 A continuación te dejo los metadatos de las tablas:
 
 """
     Metadata_prompt = ""
-    Metadatat = execute_query_and_fetch_dataframe(conn)
+    Metadatat = execute_query_and_fetch_dataframe(conn,db)
     
     for i in Metadatat:
         table_value = i.get('table', '')
@@ -166,10 +175,10 @@ A continuación te dejo los metadatos de las tablas:
     return prompt
 if __name__ == '__main__':
     #conn=snowpark_basic_auth()
-    prompt=get_metadata()
-    with open('prompt.txt', 'w') as f:
-        f.write(prompt)
-    #print(prompt)
+    prompt=get_metadata("DEMO")
+    #with open('prompt.txt', 'w') as f:
+    #    f.write(prompt)
+    print(prompt)
     #session_with_pwd=snowpark_basic_auth()
 
     #result_json = execute_query_and_fetch_dataframe(session_with_pwd)

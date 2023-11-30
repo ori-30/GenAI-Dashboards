@@ -13,11 +13,11 @@ def get_text():
 
 def get_area():
 
-    input_text = st.text_input("Area de negocio (ej: sector tecnológico): ","", key="area")
+    input_text = st.text_input("Areas de negocio: ","", key="area")
     return input_text
 
 def get_des():
-    input_text = st.text_input("Descripción empresa (ej: sector startup): ","", key="des")
+    input_text = st.text_input("Descripción de la empresa: ","", key="des")
     return input_text 
 
 def create_gpt_completion(ai_model: str, messages: List[dict]) -> dict:
@@ -30,7 +30,10 @@ def create_gpt_completion(ai_model: str, messages: List[dict]) -> dict:
 
 
 def get_JSON():
-	dominios ='{ "dominios": [ { "nombre": "ciudades", "tablas": [ "CIUDADES" ] }, { "nombre": "exits", "tablas": [ "EXITS" ] }, { "nombre": "inversores", "tablas": [ "INVERSORES" ] }, { "nombre": "rondas", "tablas": [ "RONDAS" ] }, { "nombre": "startups", "tablas": [ "STARTUPS" ] }, { "nombre": "tags", "tablas": [ "TAGS" ] } ] }'
+	try:
+		dominios = st.session_state.domains
+	except:
+		st.error("error json")
 	return json.loads(dominios)
 
 def tables(alltables):
